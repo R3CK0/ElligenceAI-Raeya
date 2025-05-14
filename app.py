@@ -2,7 +2,11 @@ import streamlit as st
 import openai
 import json
 import os
-import uuid # To generate unique keys for response elements
+import uuid 
+from instructions import return_instructions
+# Run the two streaming processes in parallel
+import asyncio
+# To generate unique keys for response elements
 # Import the specific event type for type checking the stream
 # Note: This import might need adjustment based on your specific openai library version
 # and whether the Responses API types are exposed directly like this.
@@ -48,59 +52,6 @@ def log_interaction(question: str, desired_answer: str, undesired_answers: list)
     # You might want to add error handling here
 
 
-# Modified to use the Responses API and handle streaming events
-# The specific event types and structure depend on the exact OpenAI Python client version
-# and the Responses API implementation details. We follow the pattern shown in the linked docs.
-def get_openai_response_stream(user_input: str, previous_response_id: str = None, model=MODEL_NAME, temperature=0.7):
-    """
-    Calls OpenAI Responses API for chat completion with streaming.
-    Yields chunks of the response content.
-    Uses previous_response_id for conversation state.
-    """
-    try:
-        client = openai.OpenAI(api_key=openai.api_key)
-
-        api_input = user_input
-
-        # The client.responses.create method is based on the documentation provided.
-        # Ensure your installed openai library version supports this API and its parameters.
-        stream = client.responses.create(
-            model=model,
-            input=api_input,
-            previous_response_id=previous_response_id, # Manage state via ID
-            stream=True,
-            temperature=temperature
-        )
-
-        # Process stream events as shown in the documentation
-        for event in stream:
-             # Check the event type for text content and if data/delta exist
-             # The exact attribute names might vary slightly with library versions
-             if hasattr(event, 'type') and event.type == 'response.output_text.delta' and \
-                hasattr(event, 'data') and hasattr(event.data, 'delta') and event.data.delta is not None:
-                 content_chunk = event.data.delta
-                 yield content_chunk # Yield the text chunk
-
-             # Capture the response ID from a relevant event like 'response.created'
-             # This part is based on the *assumption* that the ID is available in such an event
-             # during streaming, as concrete streaming ID capture isn't explicit in the snippet provided.
-             # A more robust implementation might require checking multiple event types or
-             # confirming the exact event structure in the OpenAI library's types.
-             if hasattr(event, 'type') and event.type == 'response.created' and \
-                hasattr(event, 'data') and hasattr(event.data, 'id') and event.data.id is not None:
-                 # Store the ID temporarily. This will be captured in the calling function.
-                 # print(f"Captured ID from stream event: {event.data.id}") # Debugging
-                 pass  # Placeholder for future implementation
-
-
-    except Exception as e:
-        # It's good practice to log the full exception in a real app
-        # import traceback
-        # st.error(f"OpenAI API error: {e}\n{traceback.format_exc()}")
-        st.error(f"OpenAI API error: {e}")
-        yield f"Error: {e}"  # Yield error message to display in the textbox
-
-
 # Modified to handle two parallel streams using the Responses API and capture response IDs
 def generate_parallel_responses(user_input: str, previous_response_id: str = None):
     """
@@ -114,37 +65,40 @@ def generate_parallel_responses(user_input: str, previous_response_id: str = Non
 
     # Create columns to display responses side-by-side
     cols = st.columns(2)
-
+    
     # Function to process a single response stream and update the UI and capture ID
-    def process_stream_and_capture_id(col_index: int, temperature: float):
+    async def process_stream_and_capture_id(col_index: int, temperature: float):
         with cols[col_index]:
             st.subheader(f"Response {col_index + 1}")
             response_area = st.empty() # Placeholder to update with streamed text
             full_response_content = ""
             current_response_id = None # To store the ID for this specific response
 
+            f_user_input = [{"role": "user", "content": user_input}]
+
             try:
-                client = openai.OpenAI(api_key=openai.api_key)
-                stream = client.responses.create(
+                client = openai.AsyncOpenAI(api_key=openai.api_key)
+                stream = await client.responses.create(
                     model=MODEL_NAME,
-                    input=user_input, # New user input for this turn
+                    input=f_user_input, # New user input for this turn
+                    instructions=st.session_state.instructions,
                     previous_response_id=previous_response_id, # Link to the previous overall turn state
                     stream=True,
                     temperature=temperature
                 )
 
-                for event in stream:
+                async for event in stream:
                      # Process text chunks
                      if hasattr(event, 'type') and event.type == 'response.output_text.delta' and \
-                        hasattr(event, 'data') and hasattr(event.data, 'delta') and event.data.delta is not None:
-                         content_chunk = event.data.delta
+                        hasattr(event, 'delta') and event.delta is not None:
+                         content_chunk = event.delta
                          full_response_content += content_chunk
                          response_area.markdown(full_response_content) # Update the placeholder
 
                      # Capture the response ID from the 'response.created' event if available
                      if hasattr(event, 'type') and event.type == 'response.created' and \
-                        hasattr(event, 'data') and hasattr(event.data, 'id') and event.data.id is not None:
-                         current_response_id = event.data.id
+                        hasattr(event, 'response')  and hasattr(event.response, 'id') and event.response.id is not None:
+                         current_response_id = event.response.id
                          # print(f"Response {col_index + 1} Created ID Captured: {current_response_id}") # Debugging
 
                 # After the stream, store the full content and the captured ID
@@ -162,11 +116,18 @@ def generate_parallel_responses(user_input: str, previous_response_id: str = Non
             st.button(f"Select Response {col_index + 1}", key=f"select_btn_{col_index}_{st.session_state.response_keys[col_index]}", on_click=select_response, args=(col_index,))
 
 
-    # Run the two streaming processes. In a production async app, these might run concurrently.
-    # For Streamlit's top-to-bottom execution, we run them sequentially, but the streaming
-    # update to the UI gives the appearance of progress.
-    process_stream_and_capture_id(0, temperature=0.5) # Response 1 with lower temp
-    process_stream_and_capture_id(1, temperature=0.8) # Response 2 with higher temp
+    
+    async def run_parallel_processes():
+        # Create tasks for both processes
+        tasks = [
+            process_stream_and_capture_id(0, temperature=0.5),  # Response 1 with lower temp
+            process_stream_and_capture_id(1, temperature=0.8),  # Response 2 with higher temp
+        ]
+        # Run them concurrently
+        await asyncio.gather(*tasks)
+    
+    # Execute the async function
+    asyncio.run(run_parallel_processes())
 
     # Add the Edit button after both response streams have completed and their buttons added
     st.button("Edit Response Manually", key=f"edit_btn_{st.session_state.response_keys[0]}_edit", on_click=enable_editing) # Added _edit to key for uniqueness
@@ -251,12 +212,14 @@ def reset_chat_state():
 
 # --- Streamlit App Layout ---
 
-st.set_page_config(page_title="Documentation Chat App (Responses API)", layout="wide")
+st.set_page_config(page_title="Raeya - Your AI Assistant", layout="wide")
 
-st.title("Ask About Your Docs (Responses API Simulation)")
-st.caption("Enter questions about your documentation and get two streamed AI responses using the Responses API. Select your preference or edit the response.")
+st.title("Ask me anything about our world")
+st.caption("Enter questions about how to play the game and get two streamed AI responses using the Responses API. Select your preference or edit the response.")
 
 # Initialize state variables in session state if they don't exist
+if "instructions" not in st.session_state:
+    st.session_state.instructions = return_instructions()
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 if "deux_responses" not in st.session_state:
