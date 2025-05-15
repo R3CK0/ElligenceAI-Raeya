@@ -269,7 +269,7 @@ if send_button and user_input:
 # --- Display and Process Responses ---
 
 # If there's a current question and we are not in editing mode, generate and display responses
-if st.session_state.get("user_question") and not st.session_state.get("editing"):
+if st.session_state.get("user_question") and not st.session_state.get("editing") and not st.session_state.get("selecting"):
     st.markdown("Thinking...") # Display thinking indicator
 
     # Generate and stream the two responses using the Responses API
