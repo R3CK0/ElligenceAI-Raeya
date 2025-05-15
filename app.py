@@ -128,7 +128,7 @@ def generate_parallel_responses(user_input: str, previous_response_id: str = Non
         # Run them concurrently
         await asyncio.gather(*tasks)
         
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     loop.run_until_complete(run_parallel_processes())
 
