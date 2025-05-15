@@ -6,6 +6,7 @@ import uuid
 from instructions import return_instructions
 # Run the two streaming processes in parallel
 import asyncio
+import pathlib
 from supabase import create_client, Client
 # To generate unique keys for response elements
 # Import the specific event type for type checking the stream
@@ -22,7 +23,8 @@ from supabase import create_client, Client
 # Streamlit Secrets is recommended for deployment on Streamlit Cloud
 st.set_page_config(page_title="Raeya - Your AI Assistant", layout="wide")
 # ---- inject stylesheet ----
-st.markdown('<link rel="stylesheet" href="/static/style.css">', unsafe_allow_html=True)
+css_path = pathlib.Path("static/style.css")
+st.markdown('<style>{css_path.read_text()}</style>', unsafe_allow_html=True)
 # third orb uses a real element so ::before/after aren’t overloaded
 st.markdown('<div class="orb-bot"></div>', unsafe_allow_html=True)
 
