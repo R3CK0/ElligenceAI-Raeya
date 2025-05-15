@@ -43,36 +43,22 @@
 /* 3. Pulsing keyframes (same shape Tailwind adds) */
 @keyframes pulse { 0%,100% {opacity:.8} 50% {opacity:.4} }
 
-/* 4. “Glass” container */
-.glass {
+/* === Frosted glass effect on the main Streamlit block === */
+.block-container {
   background: rgba(255,255,255,.06);
   backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px); /* Safari */
+  -webkit-backdrop-filter: blur(14px);
   border: 1px solid rgba(255,255,255,.15);
   border-radius: 1rem;
-  padding: 2rem;
+  padding: 2rem 3rem;
+  max-width: 42rem;          /*  ~670 px  */
+  margin: 6rem auto;         /* centred, pushed down under the top menu bar */
   box-shadow: 0 10px 25px rgba(0,0,0,.3);
-  max-width: 42rem;                   /* ~670 px */
-  margin: 3rem auto;                  /* center horizontally */
 }
 
-
-/* 1 – make the Streamlit content area a flex column */
-.block-container {
+/* Optional – centre the block horizontally on larger screens */
+.main .block-container {
   display: flex;
   flex-direction: column;
-  align-items: center;      /* horizontal centre */
-  padding-top: 6rem;        /* push down from nav bar – tweak as you like */
-}
-
-/* 2 – remove Streamlit’s fixed max-width so our own width rules apply */
-.block-container > div {
-  max-width: none;
-  width: 100%;
-}
-
-/* 3 – let the card shrink/grow nicely */
-.glass {
-  width: 100%;
-  max-width: 42rem;         /* same as before, just enforced */
+  align-items: center;
 }

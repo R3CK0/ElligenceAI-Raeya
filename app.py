@@ -21,7 +21,7 @@ from supabase import create_client, Client
 # --- Configuration ---
 # Get OpenAI API key from Streamlit Secrets or environment variable
 # Streamlit Secrets is recommended for deployment on Streamlit Cloud
-st.set_page_config(page_title="Raeya - Your AI Assistant", layout="wide")
+st.set_page_config(page_title="Raeya - Your AI Assistant", layout="centered")
 # ---- inject stylesheet ----
 css_path = pathlib.Path("static/style.css")
 st.markdown(f'<style>{css_path.read_text()}</style>', unsafe_allow_html=True)
@@ -238,8 +238,6 @@ def reset_chat_state():
 
 
 with st.container():
-    st.markdown('<div class="glass">', unsafe_allow_html=True)
-
     st.title("Hi, I'm Raeya. You may ask me anything about our world")
     st.caption("Enter questions about how to play the game and get two streamed AI responses using the Responses API. Select your preference or edit the response.")
 
@@ -345,7 +343,6 @@ with st.container():
             # save_edited_response handles logging, history update, and state reset
             save_edited_response()
             # Rerun is called inside save_edited_response
-    st.markdown('</div>', unsafe_allow_html=True)
 
 # --- Final State Check/Display (Optional) ---
 # You could add something here to show the current state for debugging if needed
