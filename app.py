@@ -20,6 +20,7 @@ from supabase import create_client, Client
 # --- Configuration ---
 # Get OpenAI API key from Streamlit Secrets or environment variable
 # Streamlit Secrets is recommended for deployment on Streamlit Cloud
+st.set_page_config(page_title="Raeya - Your AI Assistant", layout="wide")
 # ---- inject stylesheet ----
 st.markdown('<link rel="stylesheet" href="/static/style.css">', unsafe_allow_html=True)
 # third orb uses a real element so ::before/after aren’t overloaded
@@ -233,7 +234,7 @@ def reset_chat_state():
 
 # --- Streamlit App Layout ---
 
-st.set_page_config(page_title="Raeya - Your AI Assistant", layout="wide")
+
 with st.container():
     st.markdown('<div class="glass">', unsafe_allow_html=True)
 
