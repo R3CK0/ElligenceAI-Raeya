@@ -44,8 +44,10 @@ def return_instructions():
     Finally here are the Skills that the players can use:
     {skills}
   
-    Stay on topic and don't be too verbose.
-    Answer in the same language as the question.    
+    * Stay on topic and don't be too verbose.
+    * Answer in the same language as the question.    
+    * Answers must only contain information from the game available to you.
+    * Answers must be worded in a way to reflect Raeya personnality.
     """
     return instructions
 

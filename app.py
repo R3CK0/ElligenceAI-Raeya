@@ -58,6 +58,8 @@ def generate_parallel_responses(user_input: str, previous_response_id: str = Non
     Generates two parallel responses from OpenAI using the Responses API.
     Handles streaming events and captures response IDs.
     """
+    print("Generating parallel responses")
+    print(f"user_input: {user_input}")
     st.session_state.deux_responses = ["", ""] # Initialize storage for the two responses
     st.session_state.response_keys = [str(uuid.uuid4()), str(uuid.uuid4())] # Unique keys for elements
     # Store the IDs of the two responses generated in this turn for potential future turns
@@ -125,12 +127,13 @@ def generate_parallel_responses(user_input: str, previous_response_id: str = Non
         ]
         # Run them concurrently
         await asyncio.gather(*tasks)
-    
-    # Execute the async function
-    asyncio.run(run_parallel_processes())
+        
+    loop = asyncio.get_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(run_parallel_processes())
 
     # Add the Edit button after both response streams have completed and their buttons added
-    st.button("Edit Response Manually", key=f"edit_btn_{st.session_state.response_keys[0]}_edit", on_click=enable_editing) # Added _edit to key for uniqueness
+    st.button("Input desired response", key=f"edit_btn_{st.session_state.response_keys[0]}_edit", on_click=enable_editing) # Added _edit to key for uniqueness
 
 
 # --- State Management Callbacks ---
@@ -204,6 +207,7 @@ def reset_chat_state():
     st.session_state.deux_responses = []
     st.session_state.selected_response_index = None
     st.session_state.editing = False
+    st.session_state.selecting = False
     st.session_state.edited_response = ""
     st.session_state.response_keys = []
     st.session_state.current_response_ids = [None, None] # Clear temporary IDs for the current turn
@@ -240,6 +244,8 @@ if "current_response_ids" not in st.session_state:
 # This ID is used to link the state for the *next* turn's API calls.
 if "last_response_id" not in st.session_state:
      st.session_state.last_response_id = None
+if "selecting" not in st.session_state:
+     st.session_state.selecting = False
 
 
 # Display past chat messages
@@ -269,7 +275,7 @@ if st.session_state.get("user_question") and not st.session_state.get("editing")
     # Generate and stream the two responses using the Responses API
     # Pass the previous_response_id from the *last* completed turn to link state
     generate_parallel_responses(st.session_state.user_question, st.session_state.last_response_id)
-
+    st.session_state.selecting = True
     # Note: The selection and editing buttons are added by generate_parallel_responses
     # The on_click callbacks of these buttons will update session state and trigger reruns
     # which will then execute the logging/history update logic below.
