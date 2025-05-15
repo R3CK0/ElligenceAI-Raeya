@@ -21,7 +21,7 @@ from supabase import create_client, Client
 # --- Configuration ---
 # Get OpenAI API key from Streamlit Secrets or environment variable
 # Streamlit Secrets is recommended for deployment on Streamlit Cloud
-st.set_page_config(page_title="Raeya - Your AI Assistant", layout="centered")
+st.set_page_config(page_title="Raeya - Your AI Assistant", layout="wide")
 # ---- inject stylesheet ----
 css_path = pathlib.Path("static/style.css")
 st.markdown(f'<style>{css_path.read_text()}</style>', unsafe_allow_html=True)
