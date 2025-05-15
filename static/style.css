@@ -55,3 +55,24 @@
   max-width: 42rem;                   /* ~670 px */
   margin: 3rem auto;                  /* center horizontally */
 }
+
+
+/* 1 – make the Streamlit content area a flex column */
+.block-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;      /* horizontal centre */
+  padding-top: 6rem;        /* push down from nav bar – tweak as you like */
+}
+
+/* 2 – remove Streamlit’s fixed max-width so our own width rules apply */
+.block-container > div {
+  max-width: none;
+  width: 100%;
+}
+
+/* 3 – let the card shrink/grow nicely */
+.glass {
+  width: 100%;
+  max-width: 42rem;         /* same as before, just enforced */
+}

@@ -24,7 +24,7 @@ from supabase import create_client, Client
 st.set_page_config(page_title="Raeya - Your AI Assistant", layout="wide")
 # ---- inject stylesheet ----
 css_path = pathlib.Path("static/style.css")
-st.markdown('<style>{css_path.read_text()}</style>', unsafe_allow_html=True)
+st.markdown(f'<style>{css_path.read_text()}</style>', unsafe_allow_html=True)
 # third orb uses a real element so ::before/after aren’t overloaded
 st.markdown('<div class="orb-bot"></div>', unsafe_allow_html=True)
 
