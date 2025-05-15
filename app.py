@@ -59,10 +59,10 @@ def log_interaction(question: str, desired_answer: str, undesired_answers: list)
     except Exception as e:
         st.error(f"Error logging interaction: {e}")
     
-    with open(LOG_FILE, "a+") as f:
-        # For NDJSON, we just write each entry on a new line.
-        json.dump(log_entry, f)
-        f.write('\n')
+    # with open(LOG_FILE, "a+") as f:
+    #     # For NDJSON, we just write each entry on a new line.
+    #     json.dump(log_entry, f)
+    #     f.write('\n')
     # You might want to add error handling here
 
 
