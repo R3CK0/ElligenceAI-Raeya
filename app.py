@@ -262,8 +262,14 @@ with st.form(key="chat_form", clear_on_submit=True):
 
 # When the user sends a message
 if send_button and user_input:
-    send_message(user_input)
-    # send_message triggers rerun internally
+    if st.session_state.get("selecting"):
+        # If user tries to send a new message while still selecting a response
+        st.warning("Please select one of the responses before continuing with a new question.", icon="⚠️")
+        # Don't process the new input until selection is complete
+        st.stop()
+    else:
+        send_message(user_input)
+        # send_message triggers rerun internally
 
 
 # --- Display and Process Responses ---
