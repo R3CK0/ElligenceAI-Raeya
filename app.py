@@ -78,8 +78,6 @@ def generate_parallel_responses(user_input: str, previous_response_id: str = Non
     Generates two parallel responses from OpenAI using the Responses API.
     Handles streaming events and captures response IDs.
     """
-    print("Generating parallel responses")
-    print(f"user_input: {user_input}")
     st.session_state.deux_responses = ["", ""] # Initialize storage for the two responses
     st.session_state.response_keys = [str(uuid.uuid4()), str(uuid.uuid4())] # Unique keys for elements
     # Store the IDs of the two responses generated in this turn for potential future turns
@@ -135,7 +133,7 @@ def generate_parallel_responses(user_input: str, previous_response_id: str = Non
 
             # Add the selection button after the stream finishes for this response
             # Use a unique key to avoid issues with dynamic elements
-            st.button(f"Select Response {col_index + 1}", key=f"select_btn_{col_index}_{st.session_state.response_keys[col_index]}", on_click=select_response, args=(col_index,))
+            st.button(f"Sélectionner la réponse {col_index + 1}", key=f"select_btn_{col_index}_{st.session_state.response_keys[col_index]}", on_click=select_response, args=(col_index,))
 
 
     
@@ -153,7 +151,7 @@ def generate_parallel_responses(user_input: str, previous_response_id: str = Non
     loop.run_until_complete(run_parallel_processes())
 
     # Add the Edit button after both response streams have completed and their buttons added
-    st.button("Input desired response", key=f"edit_btn_{st.session_state.response_keys[0]}_edit", on_click=enable_editing) # Added _edit to key for uniqueness
+    st.button("Entrer votre réponse préférée", key=f"edit_btn_{st.session_state.response_keys[0]}_edit", on_click=enable_editing) # Added _edit to key for uniqueness
 
 
 # --- State Management Callbacks ---
@@ -238,8 +236,8 @@ def reset_chat_state():
 
 
 with st.container():
-    st.title("Hi, I'm Raeya. You may ask me anything about our world")
-    st.caption("Enter questions about how to play the game and get two streamed AI responses using the Responses API. Select your preference or edit the response.")
+    st.title("Bonjour, je suis Raeya. Vous pouvez me poser toutes vos questions.")
+    st.caption("Entrez vos questions et je vous donnerai deux réponses en streaming. Vous pouvez selectionner celle que vous préférez ou entrer ce que vous souhaitez.")
 
     # Initialize state variables in session state if they don't exist
     if "instructions" not in st.session_state:
@@ -277,8 +275,8 @@ with st.container():
 
     # Use a form to group the input and send button
     with st.form(key="chat_form", clear_on_submit=True):
-        user_input = st.text_input("Your question:", key="user_input_box")
-        send_button = st.form_submit_button("Send")
+        user_input = st.text_input("Votre question:", key="user_input_box")
+        send_button = st.form_submit_button("Envoyer")
 
     # When the user sends a message
     if send_button and user_input:
@@ -293,7 +291,7 @@ with st.container():
 
     # If there's a current question and we are not in editing mode, generate and display responses
     if st.session_state.get("user_question") and not st.session_state.get("editing") and not st.session_state.get("selecting"):
-        st.markdown("Thinking...") # Display thinking indicator
+        st.markdown("J'y réfléchis...") # Display thinking indicator
 
         # Generate and stream the two responses using the Responses API
         # Pass the previous_response_id from the *last* completed turn to link state
@@ -334,12 +332,12 @@ with st.container():
     # If editing is enabled, display the text area and save button
     # This block runs if the 'editing' state is True from a previous rerun.
     if st.session_state.get("editing"):
-        st.subheader("Edit Your Desired Response")
+        st.subheader("Entrer votre réponse préférée")
         # Text area pre-filled or empty, depending on the edited_response state
-        edited_text = st.text_area("Enter your preferred response:", value=st.session_state.get("edited_response", ""), height=200, key="edited_text_area")
+        edited_text = st.text_area("Entrez votre réponse préférée:", value=st.session_state.get("edited_response", ""), height=200, key="edited_text_area")
         st.session_state.edited_response = edited_text # Update state as user types in the text area
 
-        if st.button("Save Edited Response"):
+        if st.button("Enregistrer ma réponse"):
             # save_edited_response handles logging, history update, and state reset
             save_edited_response()
             # Rerun is called inside save_edited_response
