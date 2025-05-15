@@ -229,7 +229,7 @@ def reset_chat_state():
 
 st.set_page_config(page_title="Raeya - Your AI Assistant", layout="wide")
 
-st.title("Ask me anything about our world")
+st.title("Hi, I'm Raeya. You may ask me anything about our world")
 st.caption("Enter questions about how to play the game and get two streamed AI responses using the Responses API. Select your preference or edit the response.")
 
 # Initialize state variables in session state if they don't exist
