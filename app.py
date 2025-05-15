@@ -29,7 +29,7 @@ else:
     openai.api_key = api_key
 
 # Define the model to use
-MODEL_NAME = "gpt-4.1-nano" # Using the specified model
+MODEL_NAME = "gpt-4.1-mini" # Using the specified model
 
 # Log file configuration
 LOG_FILE = "conversation_log.jsonl" # Using .jsonl for newline-delimited JSON
