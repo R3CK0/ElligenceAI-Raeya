@@ -58,6 +58,7 @@ def log_interaction(question: str, desired_answer: str, undesired_answers: list)
         response = supabase.table("responses").insert(log_entry).execute()
     except Exception as e:
         st.error(f"Error logging interaction: {e}")
+        print(f"Error logging interaction: {e}")
     
     # with open(LOG_FILE, "a+") as f:
     #     # For NDJSON, we just write each entry on a new line.
