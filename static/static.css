@@ -1,0 +1,57 @@
+/* static/style.css  ─ glassy violet-pink background for the whole app */
+
+/* 0. Import a nicer font (optional) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+/* 1. Global slate canvas */
+.stApp {
+  background: #0f172a;                 /* Tailwind slate-800 */
+  font-family: "Inter", sans-serif;
+  overflow-x: hidden;
+}
+
+/* 2. Blurred gradient “orbs” */
+.stApp::before,
+.stApp::after,
+.stApp .orb-bot {
+  content: "";
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: .6;
+  animation: pulse 8s cubic-bezier(.4,0,.6,1) infinite;
+  pointer-events: none;                /* keep clicks on widgets */
+}
+.stApp::before {                       /* purple top-left */
+  top: -50%; left: -10%;
+  width: 70%; height: 150%;
+  background: rgba(168, 85, 247, .30); /* purple-500/30 */
+}
+.stApp::after {                        /* pink top-right */
+  top: -20%; right: -20%;
+  width: 80%; height: 120%;
+  background: rgba(236, 72, 153, .30); /* pink-500/30 */
+  animation-delay: 2s;
+}
+.stApp .orb-bot {                      /* violet bottom */
+  bottom: -30%; left: 20%;
+  width: 60%; height: 60%;
+  background: rgba(124, 58, 237, .30); /* violet-600/30 */
+  animation-delay: 4s;
+}
+
+/* 3. Pulsing keyframes (same shape Tailwind adds) */
+@keyframes pulse { 0%,100% {opacity:.8} 50% {opacity:.4} }
+
+/* 4. “Glass” container */
+.glass {
+  background: rgba(255,255,255,.06);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px); /* Safari */
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 10px 25px rgba(0,0,0,.3);
+  max-width: 42rem;                   /* ~670 px */
+  margin: 3rem auto;                  /* center horizontally */
+}

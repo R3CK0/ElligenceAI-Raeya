@@ -1,0 +1,9 @@
+[server]
+enableStaticServing = true   # allow /static/* paths
+
+[theme]                      # OPTIONAL – matches Tailwind palette
+base                     = "dark"
+primaryColor             = "#ec4899"   # pink-500
+backgroundColor          = "#0f172a"   # slate-800
+secondaryBackgroundColor = "#1e293b"   # slate-700
+textColor                = "#f8fafc"   # slate-50

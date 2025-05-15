@@ -20,6 +20,12 @@ from supabase import create_client, Client
 # --- Configuration ---
 # Get OpenAI API key from Streamlit Secrets or environment variable
 # Streamlit Secrets is recommended for deployment on Streamlit Cloud
+# ---- inject stylesheet ----
+st.markdown('<link rel="stylesheet" href="/static/style.css">', unsafe_allow_html=True)
+# third orb uses a real element so ::before/after aren’t overloaded
+st.markdown('<div class="orb-bot"></div>', unsafe_allow_html=True)
+
+
 api_key = st.secrets.get("OPENAI_API_KEY") or os.environ.get("OPENAI_API_KEY")
 url = st.secrets.get("SUPABASE_URL") or os.environ.get("SUPABASE_URL")
 key = st.secrets.get("SUPABASE_KEY") or os.environ.get("SUPABASE_KEY")
@@ -228,113 +234,115 @@ def reset_chat_state():
 # --- Streamlit App Layout ---
 
 st.set_page_config(page_title="Raeya - Your AI Assistant", layout="wide")
+with st.container():
+    st.markdown('<div class="glass">', unsafe_allow_html=True)
 
-st.title("Hi, I'm Raeya. You may ask me anything about our world")
-st.caption("Enter questions about how to play the game and get two streamed AI responses using the Responses API. Select your preference or edit the response.")
+    st.title("Hi, I'm Raeya. You may ask me anything about our world")
+    st.caption("Enter questions about how to play the game and get two streamed AI responses using the Responses API. Select your preference or edit the response.")
 
-# Initialize state variables in session state if they don't exist
-if "instructions" not in st.session_state:
-    st.session_state.instructions = return_instructions()
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
-if "deux_responses" not in st.session_state:
-    st.session_state.deux_responses = []
-if "user_question" not in st.session_state:
-    st.session_state.user_question = None
-if "selected_response_index" not in st.session_state:
-    st.session_state.selected_response_index = None
-if "editing" not in st.session_state:
-    st.session_state.editing = False
-if "edited_response" not in st.session_state:
-    st.session_state.edited_response = ""
-if "response_keys" not in st.session_state:
-     st.session_state.response_keys = []
-if "current_response_ids" not in st.session_state:
-     st.session_state.current_response_ids = [None, None]
-# State variable to store the ID of the response selected/edited in the *previous* turn
-# This ID is used to link the state for the *next* turn's API calls.
-if "last_response_id" not in st.session_state:
-     st.session_state.last_response_id = None
-if "selecting" not in st.session_state:
-     st.session_state.selecting = False
-
-
-# Display past chat messages
-for message in st.session_state.chat_history:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-
-# --- Handle User Input and Response Generation ---
-
-# Use a form to group the input and send button
-with st.form(key="chat_form", clear_on_submit=True):
-    user_input = st.text_input("Your question:", key="user_input_box")
-    send_button = st.form_submit_button("Send")
-
-# When the user sends a message
-if send_button and user_input:
-    if st.session_state.get("selecting"):
+    # Initialize state variables in session state if they don't exist
+    if "instructions" not in st.session_state:
+        st.session_state.instructions = return_instructions()
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
+    if "deux_responses" not in st.session_state:
+        st.session_state.deux_responses = []
+    if "user_question" not in st.session_state:
+        st.session_state.user_question = None
+    if "selected_response_index" not in st.session_state:
+        st.session_state.selected_response_index = None
+    if "editing" not in st.session_state:
+        st.session_state.editing = False
+    if "edited_response" not in st.session_state:
+        st.session_state.edited_response = ""
+    if "response_keys" not in st.session_state:
+        st.session_state.response_keys = []
+    if "current_response_ids" not in st.session_state:
+        st.session_state.current_response_ids = [None, None]
+    # State variable to store the ID of the response selected/edited in the *previous* turn
+    # This ID is used to link the state for the *next* turn's API calls.
+    if "last_response_id" not in st.session_state:
+        st.session_state.last_response_id = None
+    if "selecting" not in st.session_state:
         st.session_state.selecting = False
-        select_response(0)
-    send_message(user_input)
-        # send_message triggers rerun internally
 
 
-# --- Display and Process Responses ---
+    # Display past chat messages
+    for message in st.session_state.chat_history:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
 
-# If there's a current question and we are not in editing mode, generate and display responses
-if st.session_state.get("user_question") and not st.session_state.get("editing") and not st.session_state.get("selecting"):
-    st.markdown("Thinking...") # Display thinking indicator
+    # --- Handle User Input and Response Generation ---
 
-    # Generate and stream the two responses using the Responses API
-    # Pass the previous_response_id from the *last* completed turn to link state
-    generate_parallel_responses(st.session_state.user_question, st.session_state.last_response_id)
-    st.session_state.selecting = True
-    # Note: The selection and editing buttons are added by generate_parallel_responses
-    # The on_click callbacks of these buttons will update session state and trigger reruns
-    # which will then execute the logging/history update logic below.
+    # Use a form to group the input and send button
+    with st.form(key="chat_form", clear_on_submit=True):
+        user_input = st.text_input("Your question:", key="user_input_box")
+        send_button = st.form_submit_button("Send")
 
-
-# --- Handle Response Selection and Logging ---
-
-# If a response was selected and not currently editing, process and log
-# This block runs *after* the potential response generation if a selection happened
-# in the previous rerun triggered by a select button click.
-if st.session_state.get("selected_response_index") is not None and not st.session_state.get("editing"):
-    selected_index = st.session_state.selected_response_index
-    desired_answer = st.session_state.deux_responses[selected_index]
-    # The undesired answers are the other generated responses from this turn
-    undesired_answers = [resp for i, resp in enumerate(st.session_state.deux_responses) if i != selected_index]
-
-    # Log the interaction
-    if st.session_state.user_question: # Ensure there's a question to log
-        log_interaction(st.session_state.user_question, desired_answer, undesired_answers)
-
-        # Add the selected response to chat history for display
-        st.session_state.chat_history.append({"role": "assistant", "content": desired_answer})
-
-        # The `last_response_id` for the *next* turn was already captured in `select_response` callback
-
-        # Reset temporary state for the next turn
-        reset_chat_state()
-        st.rerun() # Rerun the app to update the display and prepare for the next question
+    # When the user sends a message
+    if send_button and user_input:
+        if st.session_state.get("selecting"):
+            st.session_state.selecting = False
+            select_response(0)
+        send_message(user_input)
+            # send_message triggers rerun internally
 
 
-# --- Handle Manual Editing ---
+    # --- Display and Process Responses ---
 
-# If editing is enabled, display the text area and save button
-# This block runs if the 'editing' state is True from a previous rerun.
-if st.session_state.get("editing"):
-    st.subheader("Edit Your Desired Response")
-    # Text area pre-filled or empty, depending on the edited_response state
-    edited_text = st.text_area("Enter your preferred response:", value=st.session_state.get("edited_response", ""), height=200, key="edited_text_area")
-    st.session_state.edited_response = edited_text # Update state as user types in the text area
+    # If there's a current question and we are not in editing mode, generate and display responses
+    if st.session_state.get("user_question") and not st.session_state.get("editing") and not st.session_state.get("selecting"):
+        st.markdown("Thinking...") # Display thinking indicator
 
-    if st.button("Save Edited Response"):
-        # save_edited_response handles logging, history update, and state reset
-        save_edited_response()
-        # Rerun is called inside save_edited_response
+        # Generate and stream the two responses using the Responses API
+        # Pass the previous_response_id from the *last* completed turn to link state
+        generate_parallel_responses(st.session_state.user_question, st.session_state.last_response_id)
+        st.session_state.selecting = True
+        # Note: The selection and editing buttons are added by generate_parallel_responses
+        # The on_click callbacks of these buttons will update session state and trigger reruns
+        # which will then execute the logging/history update logic below.
 
+
+    # --- Handle Response Selection and Logging ---
+
+    # If a response was selected and not currently editing, process and log
+    # This block runs *after* the potential response generation if a selection happened
+    # in the previous rerun triggered by a select button click.
+    if st.session_state.get("selected_response_index") is not None and not st.session_state.get("editing"):
+        selected_index = st.session_state.selected_response_index
+        desired_answer = st.session_state.deux_responses[selected_index]
+        # The undesired answers are the other generated responses from this turn
+        undesired_answers = [resp for i, resp in enumerate(st.session_state.deux_responses) if i != selected_index]
+
+        # Log the interaction
+        if st.session_state.user_question: # Ensure there's a question to log
+            log_interaction(st.session_state.user_question, desired_answer, undesired_answers)
+
+            # Add the selected response to chat history for display
+            st.session_state.chat_history.append({"role": "assistant", "content": desired_answer})
+
+            # The `last_response_id` for the *next* turn was already captured in `select_response` callback
+
+            # Reset temporary state for the next turn
+            reset_chat_state()
+            st.rerun() # Rerun the app to update the display and prepare for the next question
+
+
+    # --- Handle Manual Editing ---
+
+    # If editing is enabled, display the text area and save button
+    # This block runs if the 'editing' state is True from a previous rerun.
+    if st.session_state.get("editing"):
+        st.subheader("Edit Your Desired Response")
+        # Text area pre-filled or empty, depending on the edited_response state
+        edited_text = st.text_area("Enter your preferred response:", value=st.session_state.get("edited_response", ""), height=200, key="edited_text_area")
+        st.session_state.edited_response = edited_text # Update state as user types in the text area
+
+        if st.button("Save Edited Response"):
+            # save_edited_response handles logging, history update, and state reset
+            save_edited_response()
+            # Rerun is called inside save_edited_response
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # --- Final State Check/Display (Optional) ---
 # You could add something here to show the current state for debugging if needed
