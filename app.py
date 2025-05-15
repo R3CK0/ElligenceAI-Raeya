@@ -3,9 +3,11 @@ import openai
 import json
 import os
 import uuid 
+import time
 from instructions import return_instructions
 # Run the two streaming processes in parallel
 import asyncio
+from supabase import create_client, Client
 # To generate unique keys for response elements
 # Import the specific event type for type checking the stream
 # Note: This import might need adjustment based on your specific openai library version
@@ -20,6 +22,9 @@ import asyncio
 # Get OpenAI API key from Streamlit Secrets or environment variable
 # Streamlit Secrets is recommended for deployment on Streamlit Cloud
 api_key = st.secrets.get("OPENAI_API_KEY") or os.environ.get("OPENAI_API_KEY")
+url = st.secrets.get("SUPABASE_URL") or os.environ.get("SUPABASE_URL")
+key = st.secrets.get("SUPABASE_KEY") or os.environ.get("SUPABASE_KEY")
+supabase: Client = create_client(url, key)
 
 if not api_key:
     st.error("OpenAI API key not found.")
@@ -39,12 +44,20 @@ LOG_FILE = "conversation_log.jsonl" # Using .jsonl for newline-delimited JSON
 
 def log_interaction(question: str, desired_answer: str, undesired_answers: list):
     """Logs the user interaction to a JSONL file."""
+    undesired_answers = {i: answer for i, answer in enumerate(undesired_answers)}
+    timestamp = time.time()
     log_entry = {
         "question": question,
         "desired_answer": desired_answer,
-        "undesired_answers": undesired_answers
+        "undesired_answers": undesired_answers,
+        "created_at": timestamp
     }
     # Use 'a' mode to append, 'a+' to create if not exists
+    try:
+        response = supabase.table("responses").insert(log_entry).execute()
+    except Exception as e:
+        st.error(f"Error logging interaction: {e}")
+    
     with open(LOG_FILE, "a+") as f:
         # For NDJSON, we just write each entry on a new line.
         json.dump(log_entry, f)
@@ -264,6 +277,7 @@ with st.form(key="chat_form", clear_on_submit=True):
 if send_button and user_input:
     if st.session_state.get("selecting"):
         st.session_state.selecting = False
+        select_response(0)
     send_message(user_input)
         # send_message triggers rerun internally
 
