@@ -3,7 +3,6 @@ import openai
 import json
 import os
 import uuid 
-import datetime
 from instructions import return_instructions
 # Run the two streaming processes in parallel
 import asyncio
@@ -45,13 +44,10 @@ LOG_FILE = "conversation_log.jsonl" # Using .jsonl for newline-delimited JSON
 def log_interaction(question: str, desired_answer: str, undesired_answers: list):
     """Logs the user interaction to a JSONL file."""
     undesired_answers = {i: answer for i, answer in enumerate(undesired_answers)}
-    timestamp = datetime.datetime.now()
-    timestamp = timestamp.timetz()
     log_entry = {
         "question": question,
         "desired_answer": desired_answer,
         "undesired_answers": undesired_answers,
-        "created_at": timestamp
     }
     # Use 'a' mode to append, 'a+' to create if not exists
     try:
